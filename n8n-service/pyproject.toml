@@ -1,0 +1,29 @@
+[project]
+name = "n8n-sap-parser-service"
+version = "0.1.0"
+description = "Flask service that parses SAP sheet files from Google Drive into JSON."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+  "flask>=3.0.0",
+  "python-dotenv>=1.0.0",
+  "google-api-python-client>=2.188.0",
+  "google-auth>=2.25.2",
+  "google-auth-httplib2>=0.1.1",
+  "pandas>=2.3.3",
+  "openpyxl>=3.1.5",
+  "psycopg[binary]>=3.1",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=7.4.0",
+  "pytest-flask>=1.2.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
+[tool.pylint.TYPECHECK]
+ignored-modules = ["googleapiclient.discovery", "googleapiclient"]
+generated-members = ["files", "export_media", "get_media", "get"]

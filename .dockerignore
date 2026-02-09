@@ -1,0 +1,58 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Environment and secrets
+.env
+.env.*
+service_account.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# n8n-service specific
+n8n-service/.venv/
+n8n-service/__pycache__/
+n8n-service/.pytest_cache/
+n8n-service/tests/
+n8n-service/__marimo__/
+n8n-service/playground.py
+n8n-service/.python-version
+n8n-service/.pylintrc
+n8n-service/.dockerignore
+n8n-service/Dockerfile
+n8n-service/README.md
+
+# Data and logs
+data/
+*.log
+
+# Documentation
+README.md
+*.md
+!init.sql
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Docker
+docker-compose.yaml
+docker-compose.yml
+Dockerfile.old

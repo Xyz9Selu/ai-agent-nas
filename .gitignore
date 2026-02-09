@@ -1,0 +1,31 @@
+# Environment variables with secrets
+.env
+service_account.json
+
+# Data directory
+data/
+postgresql-data/
+n8n-data/
+
+# Docker volumes
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Node modules
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

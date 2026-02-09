@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Poetry
+.poetry/
+
+# Environment files
+.env
+.env.local
+*.env
+
+# Service account credentials (should be mounted as volume or passed via secrets)
+service_account.json
+*.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+README.md
+*.md
+
+# Other
+.DS_Store
+*.log
+requirements.py
+

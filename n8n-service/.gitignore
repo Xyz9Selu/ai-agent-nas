@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual Environments
+env/
+venv/
+ENV/
+.venv/
+.ENV/
+
+# Poetry
+# Note: poetry.lock should be committed for applications to ensure consistent dependencies
+
+# Environment files
+.env
+.env.local
+*.env
+
+# Service account credentials
+service_account.json
+*.json
+!pyproject.toml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+

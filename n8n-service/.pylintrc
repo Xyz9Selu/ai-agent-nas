@@ -1,0 +1,5 @@
+[TYPECHECK]
+# 允许 Google API 模块中的动态成员
+ignored-modules=googleapiclient.discovery,googleapiclient
+# 或者针对性地允许 files 成员
+generated-members=files,export_media,get_media,get
