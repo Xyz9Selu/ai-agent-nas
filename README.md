@@ -54,18 +54,16 @@ All configuration is managed through the `.env` file:
 - `POSTGRES_DB` - Primary database name
 - `POSTGRES_USER` - Primary database user
 - `POSTGRES_PASSWORD` - Primary database password
-- `N8N_POSTGRES_DB` - AI agent database name
-- `N8N_POSTGRES_USER` - AI agent database user
-- `N8N_POSTGRES_PASSWORD` - AI agent database password
+- `RAG_POSTGRES_DB` - AI agent database name
+- `RAG_POSTGRES_USER` - AI agent database user
+- `RAG_POSTGRES_PASSWORD` - AI agent database password
 
 ### n8n Configuration
 - `N8N_PORT` - n8n web interface port (default: 5678)
 - `N8N_HOST` - Domain name for n8n
-- `N8N_BASIC_AUTH_USER` - Admin username
-- `N8N_BASIC_AUTH_PASSWORD` - Admin password
 
 ### Other Settings
-- `GENERIC_TIMEZONE` - Container timezone
+- `TZ` - Container timezone
 - `VECTOR_SIZE` - pgvector embedding dimension (3072 or 1536)
 
 ## 🗄️ Database Initialization
@@ -184,7 +182,7 @@ docker exec -it ai-agent-nas tail -f /var/log/n8n-service.log
 **IMPORTANT:** Change these default passwords in `.env`:
 - `N8N_BASIC_AUTH_PASSWORD`
 - `POSTGRES_PASSWORD`
-- `N8N_POSTGRES_PASSWORD`
+- `RAG_POSTGRES_PASSWORD`
 
 **Google Service Account:**
 - The `service_account.json` file is mounted as a read-only volume (not copied into the image)

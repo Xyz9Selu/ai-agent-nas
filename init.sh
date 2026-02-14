@@ -4,9 +4,9 @@ set -e
 echo "Starting initialization script..."
 
 # Set defaults
-N8N_POSTGRES_DB="${N8N_POSTGRES_DB:-ai_agent}"
-N8N_POSTGRES_USER="${N8N_POSTGRES_USER:-n8nuser}"
-N8N_POSTGRES_PASSWORD="${N8N_POSTGRES_PASSWORD:?N8N_POSTGRES_PASSWORD must be set}"
+RAG_POSTGRES_DB="${RAG_POSTGRES_DB:-ai_agent}"
+RAG_POSTGRES_USER="${RAG_POSTGRES_USER:-n8nuser}"
+RAG_POSTGRES_PASSWORD="${RAG_POSTGRES_PASSWORD:?RAG_POSTGRES_PASSWORD must be set}"
 VECTOR_SIZE="${VECTOR_SIZE:-3072}"
 POSTGRES_USER="${POSTGRES_USER:-n8nuser}"
 POSTGRES_DB="${POSTGRES_DB:-n8n}"
@@ -51,9 +51,9 @@ if [[ -f "$INIT_SQL" ]]; then
     echo "Running database initialization from init.sql..."
     
     # Substitute placeholders in init.sql (use | delimiter to avoid issues with / in password)
-    sed -e "s/__N8N_POSTGRES_DB__/${N8N_POSTGRES_DB}/g" \
-        -e "s/__N8N_POSTGRES_USER__/${N8N_POSTGRES_USER}/g" \
-        -e "s/__N8N_POSTGRES_PASSWORD__/${N8N_POSTGRES_PASSWORD}/g" \
+    sed -e "s/__RAG_POSTGRES_DB__/${RAG_POSTGRES_DB}/g" \
+        -e "s/__RAG_POSTGRES_USER__/${RAG_POSTGRES_USER}/g" \
+        -e "s/__RAG_POSTGRES_PASSWORD__/${RAG_POSTGRES_PASSWORD}/g" \
         -e "s/__POSTGRES_DB__/${POSTGRES_DB}/g" \
         -e "s/__POSTGRES_USER__/${POSTGRES_USER}/g" \
         -e "s/__POSTGRES_PASSWORD__/${POSTGRES_PASSWORD}/g" \
@@ -78,8 +78,8 @@ else
 fi
 
 echo "PostgreSQL initialization complete!"
-echo "Databases configured: ${POSTGRES_DB}, ${N8N_POSTGRES_DB}"
-echo "Users configured: ${POSTGRES_USER}, ${N8N_POSTGRES_USER}"
+echo "Databases configured: ${POSTGRES_DB}, ${RAG_POSTGRES_DB}"
+echo "Users configured: ${POSTGRES_USER}, ${RAG_POSTGRES_USER}"
 
 # Start n8n-service Flask application
 echo "Starting n8n-service Flask application on port ${PORT:-5000}..."
@@ -95,6 +95,15 @@ if ps -p $FLASK_PID > /dev/null; then
 else
     echo "Warning: Flask service may have failed to start. Check /var/log/n8n-service.log"
 fi
+
+# Set n8n internal variables (derived from user-facing env vars)
+export GENERIC_TIMEZONE="${TZ:-Asia/Shanghai}"
+export DB_TYPE=postgresdb
+export DB_POSTGRESDB_HOST=localhost
+export DB_POSTGRESDB_PORT=5432
+export DB_POSTGRESDB_DATABASE="${POSTGRES_DB}"
+export DB_POSTGRESDB_USER="${POSTGRES_USER}"
+export DB_POSTGRESDB_PASSWORD="${POSTGRES_PASSWORD}"
 
 # Start n8n
 echo "Starting n8n on port ${N8N_PORT:-5678}..."

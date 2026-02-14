@@ -10,10 +10,13 @@ from psycopg.rows import dict_row
 
 logger = logging.getLogger(__name__)
 
+
 def _get_table_name() -> str:
-    name = os.getenv("TABLE_NAME", "document_rows")
+    name = os.getenv("DOCUMENT_ROWS_TABLE_NAME", "document_rows")
     if not name.replace("_", "").isalnum():
-        raise ValueError("TABLE_NAME must be alphanumeric with underscores only")
+        raise ValueError(
+            "DOCUMENT_ROWS_TABLE_NAME must be alphanumeric with underscores only"
+        )
     return name
 
 

@@ -3,6 +3,35 @@ FROM ubuntu:latest
 # Set non-interactive mode for apt
 ENV DEBIAN_FRONTEND=noninteractive
 
+# === Generic Settings ===
+ENV TZ=Asia/Shanghai
+
+# === n8n Settings ===
+ENV N8N_PORT=5678
+ENV PORT=5000
+ENV DOCUMENT_ROWS_TABLE_NAME=document_rows
+ENV N8N_HOST=localhost
+ENV WEBHOOK_URL=http://localhost:5678
+ENV N8N_SECURE_COOKIES=false
+
+# === PostgreSQL Database Settings ===
+ENV POSTGRES_DB=n8n
+ENV POSTGRES_USER=n8nuser
+ENV POSTGRES_PASSWORD=YourSuperSecureDbPassword!
+ENV RAG_POSTGRES_DB=ai_agent
+ENV RAG_POSTGRES_USER=n8nuser
+ENV RAG_POSTGRES_PASSWORD=change-this-password
+ENV VECTOR_SIZE=3072
+
+# === Email Settings ===
+ENV N8N_EMAIL_MODE=smtp
+ENV N8N_SMTP_HOST=smtp.gmail.com
+ENV N8N_SMTP_PORT=465
+ENV N8N_SMTP_USER=your-smtp-user
+ENV N8N_SMTP_PASS=your-smtp-password
+ENV N8N_SMTP_SENDER=your-sender-email
+ENV N8N_SMTP_SSL=true
+
 # Update and install basic dependencies
 RUN apt-get update && apt-get install -y \
     curl \
