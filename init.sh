@@ -77,9 +77,16 @@ else
     sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${POSTGRES_DB} TO ${POSTGRES_USER};"
 fi
 
-echo "PostgreSQL initialization complete!"
-echo "Databases configured: ${POSTGRES_DB}, ${RAG_POSTGRES_DB}"
-echo "Users configured: ${POSTGRES_USER}, ${RAG_POSTGRES_USER}"
+echo \"PostgreSQL initialization complete!\"
+echo \"Databases configured: ${POSTGRES_DB}, ${RAG_POSTGRES_DB}\"
+echo \"Users configured: ${POSTGRES_USER}, ${RAG_POSTGRES_USER}\"
+
+# Export environment variables for n8n-service Flask application
+export RAG_POSTGRES_HOST=localhost
+export RAG_POSTGRES_PORT=5432
+export RAG_POSTGRES_DB="${RAG_POSTGRES_DB}"
+export RAG_POSTGRES_USER="${RAG_POSTGRES_USER}"
+export RAG_POSTGRES_PASSWORD="${RAG_POSTGRES_PASSWORD}"
 
 # Start n8n-service Flask application
 echo "Starting n8n-service Flask application on port ${PORT:-5000}..."

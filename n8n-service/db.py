@@ -26,16 +26,16 @@ def get_db_connection() -> psycopg.Connection | None:
     Returns:
         Connection if all required env vars are set, None otherwise.
     """
-    host = os.getenv("POSTGRES_HOST")
-    port = os.getenv("POSTGRES_PORT", "5432")
-    dbname = os.getenv("POSTGRES_DB")
-    user = os.getenv("POSTGRES_USER")
-    password = os.getenv("POSTGRES_PASSWORD")
+    host = os.getenv("RAG_POSTGRES_HOST")
+    port = os.getenv("RAG_POSTGRES_PORT", "5432")
+    dbname = os.getenv("RAG_POSTGRES_DB")
+    user = os.getenv("RAG_POSTGRES_USER")
+    password = os.getenv("RAG_POSTGRES_PASSWORD")
 
     if not all([host, dbname, user, password]):
         logger.warning(
-            "Database connection skipped: missing POSTGRES_HOST, POSTGRES_DB, "
-            "POSTGRES_USER, or POSTGRES_PASSWORD"
+            "Database connection skipped: missing RAG_POSTGRES_HOST, RAG_POSTGRES_DB, "
+            "RAG_POSTGRES_USER, or RAG_POSTGRES_PASSWORD"
         )
         return None
 
