@@ -34,9 +34,20 @@ if [ ! -f "/var/lib/postgresql/16/main/PG_VERSION" ]; then
     # Set proper permissions
     chmod -R 700 /var/lib/postgresql/16/main
     
+    # Allow external connections
+    echo "listen_addresses = '*'" >> /var/lib/postgresql/16/main/postgresql.conf
+    echo "host all all 0.0.0.0/0 md5" >> /var/lib/postgresql/16/main/pg_hba.conf
+    
     echo "PostgreSQL cluster initialized successfully"
 else
     echo "PostgreSQL cluster already initialized"
+    # Ensure config allows external connections even if already initialized
+    if ! grep -q "listen_addresses = '*'" /var/lib/postgresql/16/main/postgresql.conf; then
+        echo "listen_addresses = '*'" >> /var/lib/postgresql/16/main/postgresql.conf
+    fi
+    if ! grep -q "0.0.0.0/0" /var/lib/postgresql/16/main/pg_hba.conf; then
+        echo "host all all 0.0.0.0/0 md5" >> /var/lib/postgresql/16/main/pg_hba.conf
+    fi
 fi
 
 service postgresql start
