@@ -73,7 +73,7 @@ def test_parse_sap_sheet_uses_custom_dataset_id(monkeypatch):
 
 
 def test_parse_sap_sheet_jsonl_success(monkeypatch):
-    def _fake_write_sap_sheet_to_file(file_id: str, access_token: str):
+    def _fake_write_sap_sheet_to_file(file_id: str, access_token: str, **kwargs):
         assert file_id == "file456"
         assert access_token == "token789"
         return {
@@ -190,4 +190,184 @@ def test_parse_sap_sheet_jsonl_missing_file_id_returns_400():
         json={},
     )
     assert resp.status_code == 400
+
+
+def test_parse_sap_sheet_passes_sheet_name(monkeypatch):
+    calls = []
+
+    def _fake_write_sap_sheet_to_database(file_id: str, access_token: str, **kwargs):
+        calls.append({"file_id": file_id, "access_token": access_token, **kwargs})
+        return {
+            "file_id": file_id,
+            "name": "n",
+            "mime_type": "text/csv",
+            "total_rows": 1,
+        }
+
+    monkeypatch.setattr(
+        main.sap_parser, "write_sap_sheet_to_database", _fake_write_sap_sheet_to_database
+    )
+
+    client = main.app.test_client()
+    resp = client.post(
+        "/parse-sap-sheet",
+        headers={"Authorization": "Bearer token"},
+        json={"file_id": "f1", "sheet_name": "Data"},
+    )
+    assert resp.status_code == 200
+    assert calls[0]["sheet_name"] == "Data"
+    assert calls[0].get("sheet_id") is None
+
+
+def test_parse_sap_sheet_sheet_id_takes_precedence_when_both_given(monkeypatch):
+    calls = []
+
+    def _fake_write_sap_sheet_to_database(file_id: str, access_token: str, **kwargs):
+        calls.append({"file_id": file_id, "access_token": access_token, **kwargs})
+        return {
+            "file_id": file_id,
+            "name": "n",
+            "mime_type": "text/csv",
+            "total_rows": 1,
+        }
+
+    monkeypatch.setattr(
+        main.sap_parser, "write_sap_sheet_to_database", _fake_write_sap_sheet_to_database
+    )
+
+    client = main.app.test_client()
+    resp = client.post(
+        "/parse-sap-sheet",
+        headers={"Authorization": "Bearer token"},
+        json={"file_id": "f1", "sheet_name": "Tab1", "sheet_id": 12345},
+    )
+    assert resp.status_code == 200
+    assert calls[0]["sheet_id"] == 12345
+    assert calls[0]["sheet_name"] == "Tab1"
+
+
+def test_parse_sap_sheet_sheet_not_found_returns_400(monkeypatch):
+    def _fake_write_sap_sheet_to_database(file_id: str, access_token: str, **kwargs):
+        raise ValueError("Sheet not found: sheet_name='Missing'")
+
+    monkeypatch.setattr(
+        main.sap_parser, "write_sap_sheet_to_database", _fake_write_sap_sheet_to_database
+    )
+
+    client = main.app.test_client()
+    resp = client.post(
+        "/parse-sap-sheet",
+        headers={"Authorization": "Bearer token"},
+        json={"file_id": "f1", "sheet_name": "Missing"},
+    )
+    assert resp.status_code == 400
+    data = resp.get_json()
+    assert "error" in data
+    assert "Sheet not found" in data["error"]
+
+
+def test_parse_sap_sheet_invalid_sheet_id_returns_400():
+    client = main.app.test_client()
+    resp = client.post(
+        "/parse-sap-sheet",
+        headers={"Authorization": "Bearer token"},
+        json={"file_id": "f1", "sheet_id": "not-a-number"},
+    )
+    assert resp.status_code == 400
+    data = resp.get_json()
+    assert "sheet_id" in data.get("error", "").lower()
+
+
+def test_parse_sap_sheet_to_table_missing_auth_returns_401():
+    client = main.app.test_client()
+    resp = client.post("/parse-sap-sheet-to-table", json={"file_id": "abc"})
+    assert resp.status_code == 401
+
+
+def test_parse_sap_sheet_to_table_missing_file_id_returns_400():
+    client = main.app.test_client()
+    resp = client.post(
+        "/parse-sap-sheet-to-table",
+        headers={"Authorization": "Bearer token"},
+        json={},
+    )
+    assert resp.status_code == 400
+
+
+def test_parse_sap_sheet_to_table_success_returns_table_name_and_schema(monkeypatch):
+    def _fake_write_sap_sheet_to_table(file_id, access_token, **kwargs):
+        return {
+            "table_name": "imp_my_report_sheet1",
+            "schema": [{"name": "order", "type": "text"}, {"name": "material", "type": "text"}],
+            "total_rows": 10,
+            "rows_inserted": 10,
+            "file_id": file_id,
+            "name": "My Report",
+            "mime_type": "application/vnd.google-apps.spreadsheet",
+        }
+
+    monkeypatch.setattr(
+        main.sap_parser, "write_sap_sheet_to_table", _fake_write_sap_sheet_to_table
+    )
+
+    client = main.app.test_client()
+    resp = client.post(
+        "/parse-sap-sheet-to-table",
+        headers={"Authorization": "Bearer token123"},
+        json={"file_id": "file123"},
+    )
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["table_name"] == "imp_my_report_sheet1"
+    assert len(data["schema"]) == 2
+    assert data["schema"][0]["name"] == "order"
+    assert data["schema"][0]["type"] == "text"
+    assert data["total_rows"] == 10
+    assert data["rows_inserted"] == 10
+
+
+def test_parse_sap_sheet_to_table_sheet_name_passed_through(monkeypatch):
+    calls = []
+
+    def _fake_write_sap_sheet_to_table(file_id, access_token, **kwargs):
+        calls.append(kwargs)
+        return {
+            "table_name": "imp_x",
+            "schema": [],
+            "total_rows": 0,
+            "rows_inserted": 0,
+            "file_id": file_id,
+            "name": "n",
+            "mime_type": "x",
+        }
+
+    monkeypatch.setattr(
+        main.sap_parser, "write_sap_sheet_to_table", _fake_write_sap_sheet_to_table
+    )
+
+    client = main.app.test_client()
+    client.post(
+        "/parse-sap-sheet-to-table",
+        headers={"Authorization": "Bearer t"},
+        json={"file_id": "f1", "sheet_name": "Data"},
+    )
+    assert calls[0]["sheet_name"] == "Data"
+
+
+def test_parse_sap_sheet_to_table_value_error_returns_400(monkeypatch):
+    def _fake_write_sap_sheet_to_table(*args, **kwargs):
+        raise ValueError("No header row found in TXT report")
+
+    monkeypatch.setattr(
+        main.sap_parser, "write_sap_sheet_to_table", _fake_write_sap_sheet_to_table
+    )
+
+    client = main.app.test_client()
+    resp = client.post(
+        "/parse-sap-sheet-to-table",
+        headers={"Authorization": "Bearer t"},
+        json={"file_id": "f1"},
+    )
+    assert resp.status_code == 400
+    assert "No header row" in resp.get_json().get("error", "")
 

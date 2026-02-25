@@ -57,9 +57,17 @@ Authorization: Bearer YOUR_ACCESS_TOKEN
 Content-Type: application/json
 
 {
-  "file_id": "YOUR_FILE_ID"
+  "file_id": "YOUR_FILE_ID",
+  "dataset_id": "optional_dataset_id",
+  "sheet_name": "optional_sheet_tab_title",
+  "sheet_id": 12345
 }
 ```
+
+- `file_id` (required): Google Drive file ID.
+- `dataset_id` (optional): Override dataset id for DB writes; defaults to `file_id`.
+- `sheet_name` (optional): For Google Spreadsheets, load the sheet whose tab title equals this string (exact match). Ignored for XLSX/binary files.
+- `sheet_id` (optional): For Google Spreadsheets, load the sheet with this Google Sheets API `sheetId` (integer). If both `sheet_name` and `sheet_id` are given, `sheet_id` takes precedence. Ignored for XLSX/binary files.
 
 Response:
 
@@ -83,9 +91,25 @@ curl -X POST http://localhost:5000/parse-sap-sheet \
   -d '{"file_id":"1abc123def456"}'
 ```
 
+### Parse SAP sheet to JSONL
+
+```bash
+POST /parse-sap-sheet-jsonl
+Authorization: Bearer YOUR_ACCESS_TOKEN
+Content-Type: application/json
+
+{
+  "file_id": "YOUR_FILE_ID",
+  "sheet_name": "optional_sheet_tab_title",
+  "sheet_id": 12345
+}
+```
+
+Same optional `sheet_name` and `sheet_id` as above; when both are provided, `sheet_id` takes precedence.
+
 ## Error handling
 
-- `400`: Missing `file_id`.
+- `400`: Missing `file_id`, invalid `sheet_id` (non-integer), or sheet not found (when `sheet_name`/`sheet_id` is specified).
 - `401`: Missing/invalid `Authorization` header.
 - `5xx`: Google API or parsing failures.
 

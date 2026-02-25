@@ -58,7 +58,7 @@ def clean_and_process(raw_data):
         if len(actual_content) > 5:
             header_idx = i
             break
-            
+
     header = raw_data[header_idx]
 
     # --- 你的原始逻辑：清洗数据 (Wash Data) ---
