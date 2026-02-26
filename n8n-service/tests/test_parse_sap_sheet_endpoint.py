@@ -354,6 +354,52 @@ def test_parse_sap_sheet_to_table_sheet_name_passed_through(monkeypatch):
     assert calls[0]["sheet_name"] == "Data"
 
 
+def test_parse_sap_sheet_to_table_prefix_passed_through(monkeypatch):
+    """Optional prefix from body or query is passed as table_prefix; when missing, default from DEFAULT_TABLE_PREFIX env."""
+    calls = []
+
+    def _fake_write_sap_sheet_to_table(file_id, access_token, **kwargs):
+        calls.append(kwargs.copy())
+        return {
+            "table_name": "imp_foo",
+            "schema": [],
+            "total_rows": 0,
+            "rows_inserted": 0,
+            "file_id": file_id,
+            "name": "n",
+            "mime_type": "x",
+        }
+
+    monkeypatch.setattr(
+        main.sap_parser, "write_sap_sheet_to_table", _fake_write_sap_sheet_to_table
+    )
+    client = main.app.test_client()
+
+    client.post(
+        "/parse-sap-sheet-to-table",
+        headers={"Authorization": "Bearer t"},
+        json={"file_id": "f1", "prefix": "imp"},
+    )
+    assert calls[0]["table_prefix"] == "imp"
+
+    calls.clear()
+    monkeypatch.setenv("DEFAULT_TABLE_PREFIX", "imp_")
+    client.post(
+        "/parse-sap-sheet-to-table",
+        headers={"Authorization": "Bearer t"},
+        json={"file_id": "f1"},
+    )
+    assert calls[0]["table_prefix"] == "imp_"
+
+    calls.clear()
+    client.post(
+        "/parse-sap-sheet-to-table?prefix=myprefix",
+        headers={"Authorization": "Bearer t"},
+        json={"file_id": "f1"},
+    )
+    assert calls[0]["table_prefix"] == "myprefix"
+
+
 def test_parse_sap_sheet_to_table_value_error_returns_400(monkeypatch):
     def _fake_write_sap_sheet_to_table(*args, **kwargs):
         raise ValueError("No header row found in TXT report")

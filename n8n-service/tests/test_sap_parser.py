@@ -233,7 +233,7 @@ def test_write_sap_sheet_to_table_success_returns_table_name_and_schema(monkeypa
 
     result = sap_parser.write_sap_sheet_to_table("fid", "token")
     assert "table_name" in result
-    assert result["table_name"].startswith("imp_")
+    assert result["table_name"] == "my_report_sheet1"
     assert "schema" in result
     assert len(result["schema"]) == 6
     assert result["schema"][0]["type"] == "text"
@@ -241,3 +241,6 @@ def test_write_sap_sheet_to_table_success_returns_table_name_and_schema(monkeypa
     assert result["rows_inserted"] == 2
     assert result["file_id"] == "fid"
     assert result["name"] == "My Report"
+
+    result_with_prefix = sap_parser.write_sap_sheet_to_table("fid", "token", table_prefix="imp")
+    assert result_with_prefix["table_name"] == "imp_my_report_sheet1"

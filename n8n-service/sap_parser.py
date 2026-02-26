@@ -563,9 +563,11 @@ def write_sap_sheet_to_table(
     *,
     sheet_id: int | None = None,
     sheet_name: str | None = None,
+    table_prefix: str | None = None,
 ) -> dict[str, Any]:
     """Parse SAP sheet or TXT report from Google Drive and write to a dedicated table.
-    Table name = imp_ + sanitized(document_name + sheet_name). Schema from source header.
+    Table name = optional table_prefix + sanitized(document_name + sheet_name). Schema from source header.
+    If table_prefix is not provided, the table name has no prefix.
     Returns table_name, schema, total_rows, rows_inserted, file_id, name, mime_type.
     """
     drive_service = build_drive_service(access_token)
@@ -621,7 +623,7 @@ def write_sap_sheet_to_table(
             raise ValueError("No header row found in spreadsheet")
         column_names = header
 
-    table_name = db.sanitize_table_name(document_name, sheet_title)
+    table_name = db.sanitize_table_name(document_name, sheet_title, prefix=table_prefix)
 
     conn = db.get_db_connection()
     if conn is None:

@@ -7,20 +7,26 @@ import db
 
 
 def test_sanitize_table_name_basic():
-    """Document + sheet become lowercase with underscores."""
-    assert db.sanitize_table_name("Order Info System", "Sheet1") == "imp_order_info_system_sheet1"
+    """Document + sheet become lowercase with underscores; no prefix when prefix not provided."""
+    assert db.sanitize_table_name("Order Info System", "Sheet1") == "order_info_system_sheet1"
+
+
+def test_sanitize_table_name_with_prefix():
+    """When prefix is provided, table name is prefix_base."""
+    assert db.sanitize_table_name("Order Info System", "Sheet1", prefix="imp") == "imp_order_info_system_sheet1"
+    assert db.sanitize_table_name("Doc", "Data", prefix="imp_") == "imp_doc_data"
 
 
 def test_sanitize_table_name_special_chars():
     """Non-alphanumeric are replaced with single underscore."""
-    assert db.sanitize_table_name("Order Info System - Order Headers", "Sheet1") == "imp_order_info_system_order_headers_sheet1"
+    assert db.sanitize_table_name("Order Info System - Order Headers", "Sheet1") == "order_info_system_order_headers_sheet1"
 
 
 def test_sanitize_table_name_empty_sheet():
     """Empty sheet name still produces valid name."""
     name = db.sanitize_table_name("Doc", "")
-    assert name.startswith("imp_")
     assert "doc" in name
+    assert name == "doc"
 
 
 def test_sanitize_table_name_truncate():
@@ -28,7 +34,7 @@ def test_sanitize_table_name_truncate():
     long_doc = "a" * 100
     name = db.sanitize_table_name(long_doc, "x")
     assert len(name) <= 63
-    assert name.startswith("imp_")
+    assert name == (long_doc.lower() + "_x")[:63]
 
 
 def test_sanitize_column_names_basic():

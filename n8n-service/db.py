@@ -1,6 +1,5 @@
 """Database module for document_rows persistence and import tables."""
 
-import hashlib
 import json
 import logging
 import os
@@ -27,13 +26,33 @@ def _sanitize_identifier_part(s: str) -> str:
     return s
 
 
-def sanitize_table_name(document_name: str, sheet_name: str) -> str:
-    """Build base table name from document and sheet; then prefix with imp_ and truncate to 63 chars."""
+def _sanitize_prefix(prefix: str | None) -> str:
+    """Normalize prefix to a valid PostgreSQL identifier (lowercase, alphanumeric + underscore)."""
+    if not prefix or not isinstance(prefix, str):
+        return ""
+    s = prefix.lower().strip()
+    s = re.sub(r"[^a-z0-9_]+", "_", s)
+    s = re.sub(r"_+", "_", s).strip("_")
+    return s
+
+
+def sanitize_table_name(
+    document_name: str,
+    sheet_name: str,
+    prefix: str | None = None,
+) -> str:
+    """Build base table name from document and sheet; optionally add prefix; truncate to 63 chars.
+    If prefix is not provided, the table name has no prefix (base only).
+    """
     doc = _sanitize_identifier_part(document_name or "")
     sheet = _sanitize_identifier_part(sheet_name or "")
     parts = [p for p in (doc, sheet) if p]
     base = "_".join(parts) if parts else "unnamed"
-    full = IMP_TABLE_PREFIX + base
+    prefix_clean = _sanitize_prefix(prefix)
+    if prefix_clean:
+        full = prefix_clean + "_" + base
+    else:
+        full = base
     if len(full) > MAX_IDENTIFIER_LEN:
         full = full[:MAX_IDENTIFIER_LEN]
     return full
@@ -99,95 +118,6 @@ def index_exists(conn: psycopg.Connection, table_name: str, index_name: str) -> 
             (table_name, index_name),
         )
         return cur.fetchone() is not None
-
-
-def find_index_on_columns(
-    conn: psycopg.Connection, table_name: str, column_names: list[str]
-) -> str | None:
-    """Return the name of an existing index on the table with exactly the given columns in order, or None.
-
-    Checks by (table, column list) using system catalogs, not by our generated index name,
-    so it works even when index names are truncated or hashed.
-    """
-    if not column_names:
-        return None
-    with conn.cursor() as cur:
-        cur.execute(
-            """
-            SELECT i.relname AS index_name,
-                   array_agg(a.attname ORDER BY k.ord) AS colnames
-            FROM pg_index ix
-            JOIN pg_class i ON i.oid = ix.indexrelid
-            JOIN pg_class t ON t.oid = ix.indrelid
-            JOIN pg_namespace n ON n.oid = t.relnamespace
-            CROSS JOIN LATERAL unnest(ix.indkey::smallint[]) WITH ORDINALITY AS k(attnum, ord)
-            JOIN pg_attribute a ON a.attrelid = ix.indrelid
-              AND a.attnum = k.attnum
-              AND NOT a.attisdropped
-            WHERE n.nspname = current_schema()
-              AND t.relname = %s
-              AND NOT ix.indisprimary
-              AND k.ord <= ix.indnkeyatts
-            GROUP BY i.relname
-            """,
-            (table_name,),
-        )
-        target = list(column_names)
-        for row in cur.fetchall():
-            if list(row["colnames"]) == target:
-                return row["index_name"]
-    return None
-
-
-def _index_name_for_table_and_columns(table_name: str, column_names: list[str]) -> str:
-    """Build a deterministic index name from table and column list (order preserved). Max 63 chars."""
-    safe_table = _sanitize_identifier_part(table_name) or "t"
-    parts = [_sanitize_identifier_part(c) or "c" for c in column_names]
-    base = "idx_" + safe_table + "_" + "_".join(parts)
-    if len(base) <= MAX_IDENTIFIER_LEN:
-        return base
-    suffix = "_" + hashlib.md5(base.encode()).hexdigest()[:6]
-    return (base[: MAX_IDENTIFIER_LEN - len(suffix)] + suffix)[:MAX_IDENTIFIER_LEN]
-
-
-def add_index_if_not_exists(
-    conn: psycopg.Connection, table_name: str, column_names: list[str]
-) -> dict[str, Any]:
-    """Ensure a B-tree index on the given table and columns. If it already exists, skip; else create.
-
-    Returns:
-        {"index": index_name, "created": True|False}
-    Raises:
-        ValueError: If table does not exist or a column is not on the table.
-    """
-    if not column_names:
-        raise ValueError("fields must be non-empty")
-
-    if not table_exists(conn, table_name):
-        raise ValueError(f"Table '{table_name}' does not exist")
-
-    existing_columns = get_table_columns(conn, table_name)
-    for col in column_names:
-        if col not in existing_columns:
-            raise ValueError(f"Column '{col}' not found on table '{table_name}'")
-
-    existing_name = find_index_on_columns(conn, table_name, column_names)
-    if existing_name is not None:
-        return {"index": existing_name, "created": False}
-
-    index_name = _index_name_for_table_and_columns(table_name, column_names)
-
-    sql = psycopg.sql
-    with conn.cursor() as cur:
-        cur.execute(
-            sql.SQL("CREATE INDEX {} ON {} ({})").format(
-                sql.Identifier(index_name),
-                sql.Identifier(table_name),
-                sql.SQL(", ").join(sql.Identifier(c) for c in column_names),
-            )
-        )
-    conn.commit()
-    return {"index": index_name, "created": True}
 
 
 def rename_table(conn: psycopg.Connection, old_name: str, new_name: str) -> None:
