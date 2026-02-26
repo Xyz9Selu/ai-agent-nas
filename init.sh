@@ -40,8 +40,9 @@ else
 fi
 
 # Configure external connections (applies to both fresh and existing clusters)
-PG_CONF="/var/lib/postgresql/16/main/postgresql.conf"
-PG_HBA="/var/lib/postgresql/16/main/pg_hba.conf"
+# NOTE: On Ubuntu, PostgreSQL reads /etc/postgresql/16/main/ NOT the PGDATA directory.
+PG_CONF="/etc/postgresql/16/main/postgresql.conf"
+PG_HBA="/etc/postgresql/16/main/pg_hba.conf"
 
 # Use -F (fixed string) to avoid regex issues with special chars like *
 if ! grep -qF "listen_addresses = '*'" "$PG_CONF"; then
