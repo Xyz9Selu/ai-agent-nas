@@ -34,20 +34,26 @@ if [ ! -f "/var/lib/postgresql/16/main/PG_VERSION" ]; then
     # Set proper permissions
     chmod -R 700 /var/lib/postgresql/16/main
     
-    # Allow external connections
-    echo "listen_addresses = '*'" >> /var/lib/postgresql/16/main/postgresql.conf
-    echo "host all all 0.0.0.0/0 md5" >> /var/lib/postgresql/16/main/pg_hba.conf
-    
     echo "PostgreSQL cluster initialized successfully"
 else
     echo "PostgreSQL cluster already initialized"
-    # Ensure config allows external connections even if already initialized
-    if ! grep -q "listen_addresses = '*'" /var/lib/postgresql/16/main/postgresql.conf; then
-        echo "listen_addresses = '*'" >> /var/lib/postgresql/16/main/postgresql.conf
-    fi
-    if ! grep -q "0.0.0.0/0" /var/lib/postgresql/16/main/pg_hba.conf; then
-        echo "host all all 0.0.0.0/0 md5" >> /var/lib/postgresql/16/main/pg_hba.conf
-    fi
+fi
+
+# Configure external connections (applies to both fresh and existing clusters)
+PG_CONF="/var/lib/postgresql/16/main/postgresql.conf"
+PG_HBA="/var/lib/postgresql/16/main/pg_hba.conf"
+
+# Use -F (fixed string) to avoid regex issues with special chars like *
+if ! grep -qF "listen_addresses = '*'" "$PG_CONF"; then
+    # Comment out any existing listen_addresses lines, then append the correct one
+    sed -i "s/^listen_addresses/#listen_addresses/g" "$PG_CONF"
+    echo "listen_addresses = '*'" >> "$PG_CONF"
+    echo "External listen_addresses configured."
+fi
+
+if ! grep -qF "0.0.0.0/0" "$PG_HBA"; then
+    echo "host all all 0.0.0.0/0 md5" >> "$PG_HBA"
+    echo "pg_hba.conf external access configured."
 fi
 
 service postgresql start
